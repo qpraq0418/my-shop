@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <style>
-    /* ----- ПЕРЕМЕННЫЕ ТЕМ (СВЕТЛАЯ / ТЁМНАЯ) ----- */
+    /* ----- ПЕРЕМЕННЫЕ ТЕМ ----- */
     :root {
       --bg: #f5f7fa;
       --surface: #ffffff;
@@ -189,7 +189,7 @@
     .nav-item.active { color: var(--accent); }
     .nav-icon { font-size: 22px; margin-bottom: 2px; }
 
-    /* Drawer (меню) */
+    /* Drawer */
     .drawer {
       position: fixed; top: 0; right: -300px; width: 280px; height: 100%;
       background: var(--surface); box-shadow: -5px 0 20px rgba(0,0,0,0.1);
@@ -209,7 +209,7 @@
       cursor: pointer; color: var(--text-primary);
     }
 
-    /* Модальное окно (успешный заказ) */
+    /* Модальное окно */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.5); z-index: 2000;
@@ -268,31 +268,26 @@
   </style>
 </head>
 <body>
-  <!-- Drawer overlay -->
   <div class="drawer-overlay" id="drawerOverlay"></div>
-  <!-- Drawer -->
   <div class="drawer" id="drawer">
     <button class="close-drawer" id="closeDrawerBtn">&times;</button>
     <h3 style="margin-bottom:20px; color:var(--text-primary);">Настройки</h3>
     <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border);">
       <span>🌙 Тёмная тема</span>
-      <label class="switch">
-        <input type="checkbox" id="themeSwitch">
-      </label>
+      <label><input type="checkbox" id="themeSwitch"></label>
     </div>
   </div>
 
-  <!-- Модальное окно подтверждения заказа -->
+  <!-- Модальное окно успеха -->
   <div class="modal-overlay" id="successModal">
     <div class="modal-card">
       <div class="modal-icon">✅</div>
       <div class="modal-title">Заказ оформлен!</div>
-      <div class="modal-text">Мы уже получили ваш заказ и совсем скоро свяжемся с вами для уточнения деталей. Хорошего дня! С уважением qpraq store</div>
+      <div class="modal-text">Мы уже получили ваш заказ и совсем скоро свяжемся с вами для уточнения деталей. Хорошего дня!</div>
       <button class="modal-btn" id="closeModalBtn">Понятно</button>
     </div>
   </div>
 
-  <!-- Шапка -->
   <div class="app-header">
     <div class="logo">✦ QPRAQ STORE</div>
     <button class="menu-btn" id="menuBtn">☰</button>
@@ -322,225 +317,223 @@
     <button id="clearCartBtn" style="margin-top:16px; background:none; border:none; color:var(--danger);">Очистить корзину</button>
   </div>
 
-  <!-- Нижнее меню -->
   <div class="bottom-nav">
     <button class="nav-item active" data-screen="home"><span class="nav-icon">🏠</span>Главная</button>
     <button class="nav-item" data-screen="cart"><span class="nav-icon">🛒</span>Корзина <span id="cartCountBadge"></span></button>
   </div>
 
   <script>
-    // ---------- НАСТРОЙКИ (ЗАМЕНИТЕ НА СВОИ) ----------
-    const PRODUCTS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCWLsmQuxcITOg3hjhKFcXKM6Lj4VIOcRZCm_dSpTncH0DHFDpaTjsniRd3hO-qxEUW3evcdhJMwJT/pub?gid=0&single=true&output=csv';
-    const ORDER_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwML-RtpsAuUayi7ES8GNKGOfL-K4h9E9uba81Ntu9RGkQ_CGtC7Zm__5JSV_PhBh_G/exec';
-    // Если нужен прокси для CORS: const PROXY_URL = 'https://api.allorigins.win/raw?url=';
-    
-    // ---------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ----------
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    let products = [];
+    (function() {
+      // ---------- НАСТРОЙКИ (ЗАМЕНИТЕ НА СВОИ) ----------
+      const PRODUCTS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCWLsmQuxcITOg3hjhKFcXKM6Lj4VIOcRZCm_dSpTncH0DHFDpaTjsniRd3hO-qxEUW3evcdhJMwJT/pub?gid=0&single=true&output=csv';
+      const ORDER_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwML-RtpsAuUayi7ES8GNKGOfL-K4h9E9uba81Ntu9RGkQ_CGtC7Zm__5JSV_PhBh_G/exec';
+      // const PROXY_URL = 'https://api.allorigins.win/raw?url=';  // раскомментируйте если CORS
 
-    // DOM элементы
-    const homeScreen = document.getElementById('homeScreen');
-    const detailScreen = document.getElementById('detailScreen');
-    const cartScreen = document.getElementById('cartScreen');
-    const productsContainer = document.getElementById('productsContainer');
-    const detailContainer = document.getElementById('detailContainer');
-    const cartItemsContainer = document.getElementById('cartItemsContainer');
-    const cartTotalSpan = document.getElementById('cartTotal');
-    const cartCountBadge = document.getElementById('cartCountBadge');
-    const messageDiv = document.getElementById('message');
-    const orderForm = document.getElementById('orderForm');
-    const menuBtn = document.getElementById('menuBtn');
-    const drawer = document.getElementById('drawer');
-    const drawerOverlay = document.getElementById('drawerOverlay');
-    const closeDrawerBtn = document.getElementById('closeDrawerBtn');
-    const themeSwitch = document.getElementById('themeSwitch');
-    const backFromDetailBtn = document.getElementById('backFromDetailBtn');
-    const successModal = document.getElementById('successModal');
-    const closeModalBtn = document.getElementById('closeModalBtn');
+      // ---------- СОСТОЯНИЕ ----------
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      let products = [];
 
-    // ---------- ТЕМА ----------
-    if (localStorage.getItem('theme') === 'dark') {
-      document.body.classList.add('dark');
-      themeSwitch.checked = true;
-    }
-    themeSwitch.addEventListener('change', e => {
-      document.body.classList.toggle('dark', e.target.checked);
-      localStorage.setItem('theme', e.target.checked ? 'dark' : 'light');
-    });
+      // DOM элементы
+      const homeScreen = document.getElementById('homeScreen');
+      const detailScreen = document.getElementById('detailScreen');
+      const cartScreen = document.getElementById('cartScreen');
+      const productsContainer = document.getElementById('productsContainer');
+      const detailContainer = document.getElementById('detailContainer');
+      const cartItemsContainer = document.getElementById('cartItemsContainer');
+      const cartTotalSpan = document.getElementById('cartTotal');
+      const cartCountBadge = document.getElementById('cartCountBadge');
+      const messageDiv = document.getElementById('message');
+      const orderForm = document.getElementById('orderForm');
+      const menuBtn = document.getElementById('menuBtn');
+      const drawer = document.getElementById('drawer');
+      const drawerOverlay = document.getElementById('drawerOverlay');
+      const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+      const themeSwitch = document.getElementById('themeSwitch');
+      const backFromDetailBtn = document.getElementById('backFromDetailBtn');
+      const successModal = document.getElementById('successModal');
+      const closeModalBtn = document.getElementById('closeModalBtn');
 
-    // ---------- DRAWER (меню) ----------
-    menuBtn.addEventListener('click', () => {
-      drawer.classList.add('open');
-      drawerOverlay.classList.add('show');
-    });
-    function closeDrawer() {
-      drawer.classList.remove('open');
-      drawerOverlay.classList.remove('show');
-    }
-    closeDrawerBtn.addEventListener('click', closeDrawer);
-    drawerOverlay.addEventListener('click', closeDrawer);
-
-    // ---------- НАВИГАЦИЯ ----------
-    function setActiveScreen(screenId) {
-      homeScreen.classList.remove('active');
-      detailScreen.classList.remove('active');
-      cartScreen.classList.remove('active');
-      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-      if (screenId === 'home') {
-        homeScreen.classList.add('active');
-        document.querySelector('[data-screen="home"]').classList.add('active');
-      } else if (screenId === 'cart') {
-        cartScreen.classList.add('active');
-        document.querySelector('[data-screen="cart"]').classList.add('active');
-        renderCart();
-      } else if (screenId === 'detail') {
-        detailScreen.classList.add('active');
+      // Тема
+      if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark');
+        if (themeSwitch) themeSwitch.checked = true;
       }
-      closeDrawer();
-    }
-    document.querySelectorAll('.nav-item').forEach(btn => {
-      btn.addEventListener('click', () => setActiveScreen(btn.dataset.screen));
-    });
-    backFromDetailBtn.addEventListener('click', () => setActiveScreen('home'));
-
-    // ---------- МОДАЛЬНОЕ ОКНО ----------
-    function showSuccessModal() {
-      successModal.classList.add('show');
-    }
-    function hideSuccessModal() {
-      successModal.classList.remove('show');
-    }
-    closeModalBtn.addEventListener('click', () => {
-      hideSuccessModal();
-      setActiveScreen('home');  // после закрытия возвращаем на главную
-    });
-    successModal.addEventListener('click', (e) => {
-      if (e.target === successModal) hideSuccessModal();
-    });
-
-    // ---------- ЗАГРУЗКА ТОВАРОВ ----------
-    async function loadProducts() {
-      try {
-        let url = PRODUCTS_CSV_URL;
-        // если нужен прокси: url = PROXY_URL + encodeURIComponent(PRODUCTS_CSV_URL);
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Ошибка сети');
-        const csvText = await response.text();
-        const rows = csvText.trim().split('\n').slice(1);
-        products = rows.map(row => {
-          const cols = row.split(',').map(c => c.trim());
-          return {
-            id: cols[0] || '',
-            name: cols[1] || '',
-            price: parseFloat(cols[2]) || 0,
-            oldPrice: parseFloat(cols[3]) || null,
-            discountPercent: parseInt(cols[4]) || null,
-            image: cols[5] || 'https://via.placeholder.com/150',
-            description: cols[6] || ''
-          };
-        }).filter(p => p.id);
-        renderHomeProducts();
-      } catch (err) {
-        productsContainer.innerHTML = '<p style="color:var(--danger);">Ошибка загрузки товаров</p>';
-        console.error(err);
+      if (themeSwitch) {
+        themeSwitch.addEventListener('change', (e) => {
+          document.body.classList.toggle('dark', e.target.checked);
+          localStorage.setItem('theme', e.target.checked ? 'dark' : 'light');
+        });
       }
-    }
 
-    function renderHomeProducts() {
-      if (!products.length) {
-        productsContainer.innerHTML = '<p>Нет товаров</p>';
-        return;
+      // Drawer
+      menuBtn.addEventListener('click', () => {
+        drawer.classList.add('open');
+        drawerOverlay.classList.add('show');
+      });
+      function closeDrawer() {
+        drawer.classList.remove('open');
+        drawerOverlay.classList.remove('show');
       }
-      let html = '';
-      products.forEach(p => {
-        const hasDiscount = p.oldPrice && p.oldPrice > p.price;
-        const discount = hasDiscount ? Math.round((1 - p.price / p.oldPrice) * 100) : p.discountPercent;
-        html += `
-          <div class="product-card" onclick="window.showProductDetail('${p.id}')">
-            <div class="product-row">
-              <img class="product-image" src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}">
-              <div class="product-info">
-                <div class="product-title">${escapeHtml(p.name)}</div>
-                <div class="price-section">
-                  ${hasDiscount ? `<span class="old-price">${p.oldPrice} ₽</span>` : ''}
-                  <span class="current-price">${p.price} ₽</span>
-                  ${hasDiscount ? `<span class="discount-badge">-${discount}%</span>` : ''}
+      closeDrawerBtn.addEventListener('click', closeDrawer);
+      drawerOverlay.addEventListener('click', closeDrawer);
+
+      // Навигация
+      function setActiveScreen(screenId) {
+        homeScreen.classList.remove('active');
+        detailScreen.classList.remove('active');
+        cartScreen.classList.remove('active');
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        if (screenId === 'home') {
+          homeScreen.classList.add('active');
+          document.querySelector('[data-screen="home"]').classList.add('active');
+        } else if (screenId === 'cart') {
+          cartScreen.classList.add('active');
+          document.querySelector('[data-screen="cart"]').classList.add('active');
+          renderCart();
+        } else if (screenId === 'detail') {
+          detailScreen.classList.add('active');
+        }
+        closeDrawer();
+      }
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', () => setActiveScreen(btn.dataset.screen));
+      });
+      backFromDetailBtn.addEventListener('click', () => setActiveScreen('home'));
+
+      // Модалка
+      function showSuccessModal() {
+        successModal.classList.add('show');
+      }
+      function hideSuccessModal() {
+        successModal.classList.remove('show');
+        setActiveScreen('home');
+      }
+      closeModalBtn.addEventListener('click', hideSuccessModal);
+      successModal.addEventListener('click', (e) => {
+        if (e.target === successModal) hideSuccessModal();
+      });
+
+      // Загрузка товаров
+      async function loadProducts() {
+        try {
+          let url = PRODUCTS_CSV_URL;
+          // если нужен прокси: url = PROXY_URL + encodeURIComponent(PRODUCTS_CSV_URL);
+          const response = await fetch(url);
+          if (!response.ok) throw new Error('Ошибка сети');
+          const csvText = await response.text();
+          const rows = csvText.trim().split('\n').slice(1);
+          products = rows.map(row => {
+            const cols = row.split(',').map(c => c.trim());
+            return {
+              id: cols[0] || '',
+              name: cols[1] || '',
+              price: parseFloat(cols[2]) || 0,
+              oldPrice: parseFloat(cols[3]) || null,
+              discountPercent: parseInt(cols[4]) || null,
+              image: cols[5] || 'https://via.placeholder.com/150',
+              description: cols[6] || ''
+            };
+          }).filter(p => p.id);
+          renderHomeProducts();
+        } catch (err) {
+          productsContainer.innerHTML = '<p style="color:var(--danger);">Ошибка загрузки товаров</p>';
+          console.error(err);
+        }
+      }
+
+      function renderHomeProducts() {
+        if (!products.length) {
+          productsContainer.innerHTML = '<p>Нет товаров</p>';
+          return;
+        }
+        let html = '';
+        products.forEach(p => {
+          const hasDiscount = p.oldPrice && p.oldPrice > p.price;
+          const discount = hasDiscount ? Math.round((1 - p.price / p.oldPrice) * 100) : p.discountPercent;
+          html += `
+            <div class="product-card" onclick="window.showProductDetail('${p.id}')">
+              <div class="product-row">
+                <img class="product-image" src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}">
+                <div class="product-info">
+                  <div class="product-title">${escapeHtml(p.name)}</div>
+                  <div class="price-section">
+                    ${hasDiscount ? `<span class="old-price">${p.oldPrice} ₽</span>` : ''}
+                    <span class="current-price">${p.price} ₽</span>
+                    ${hasDiscount ? `<span class="discount-badge">-${discount}%</span>` : ''}
+                  </div>
                 </div>
               </div>
+              <div class="card-footer">
+                ${hasDiscount ? '<span class="sale-label">SALE</span>' : '<span></span>'}
+                <button class="btn-cart" onclick="event.stopPropagation(); window.addToCart('${p.id}')">В корзину</button>
+              </div>
             </div>
-            <div class="card-footer">
-              ${hasDiscount ? '<span class="sale-label">SALE</span>' : '<span></span>'}
-              <button class="btn-cart" onclick="event.stopPropagation(); window.addToCart('${p.id}')">В корзину</button>
+          `;
+        });
+        productsContainer.innerHTML = html;
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Глобальные функции
+      window.showProductDetail = (productId) => {
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+        const hasDiscount = product.oldPrice && product.oldPrice > product.price;
+        const discount = hasDiscount ? Math.round((1 - product.price / product.oldPrice) * 100) : product.discountPercent;
+        detailContainer.innerHTML = `
+          <div class="product-detail-card">
+            <img class="detail-image" src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}">
+            <div class="detail-title">${escapeHtml(product.name)}</div>
+            <div class="detail-description">${escapeHtml(product.description || 'Описание отсутствует')}</div>
+            <div class="detail-price-block">
+              ${hasDiscount ? `<span class="old-price">${product.oldPrice} ₽</span>` : ''}
+              <span class="current-price" style="font-size:28px;">${product.price} ₽</span>
+              ${hasDiscount ? `<span class="discount-badge">-${discount}%</span>` : ''}
             </div>
+            <button class="btn-cart" style="width:100%;" onclick="window.addToCart('${product.id}')">В корзину</button>
           </div>
         `;
-      });
-      productsContainer.innerHTML = html;
-    }
+        setActiveScreen('detail');
+      };
 
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+      window.addToCart = (id) => {
+        const product = products.find(p => p.id === id);
+        if (!product) return;
+        const existing = cart.find(item => item.id === id);
+        if (existing) existing.quantity++;
+        else cart.push({ id: product.id, name: product.name, price: product.price, quantity: 1 });
+        saveCart();
+        updateCartBadge();
+        if (cartScreen.classList.contains('active')) renderCart();
+      };
 
-    // ---------- ДЕТАЛИ ТОВАРА ----------
-    window.showProductDetail = (productId) => {
-      const product = products.find(p => p.id === productId);
-      if (!product) return;
-      const hasDiscount = product.oldPrice && product.oldPrice > product.price;
-      const discount = hasDiscount ? Math.round((1 - product.price / product.oldPrice) * 100) : product.discountPercent;
-      detailContainer.innerHTML = `
-        <div class="product-detail-card">
-          <img class="detail-image" src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}">
-          <div class="detail-title">${escapeHtml(product.name)}</div>
-          <div class="detail-description">${escapeHtml(product.description || 'Описание отсутствует')}</div>
-          <div class="detail-price-block">
-            ${hasDiscount ? `<span class="old-price">${product.oldPrice} ₽</span>` : ''}
-            <span class="current-price" style="font-size:28px;">${product.price} ₽</span>
-            ${hasDiscount ? `<span class="discount-badge">-${discount}%</span>` : ''}
-          </div>
-          <button class="btn-cart" style="width:100%;" onclick="window.addToCart('${product.id}')">В корзину</button>
-        </div>
-      `;
-      setActiveScreen('detail');
-    };
+      window.removeFromCart = (id) => {
+        cart = cart.filter(item => item.id !== id);
+        saveCart();
+        updateCartBadge();
+        if (cartScreen.classList.contains('active')) renderCart();
+      };
 
-    // ---------- КОРЗИНА ----------
-    window.addToCart = (id) => {
-      const product = products.find(p => p.id === id);
-      if (!product) return;
-      const existing = cart.find(item => item.id === id);
-      if (existing) existing.quantity++;
-      else cart.push({ id: product.id, name: product.name, price: product.price, quantity: 1 });
-      saveCart();
-      updateCartBadge();
-      if (cartScreen.classList.contains('active')) renderCart();
-    };
+      window.clearCart = () => {
+        cart = [];
+        saveCart();
+        updateCartBadge();
+        if (cartScreen.classList.contains('active')) renderCart();
+      };
 
-    window.removeFromCart = (id) => {
-      cart = cart.filter(item => item.id !== id);
-      saveCart();
-      updateCartBadge();
-      if (cartScreen.classList.contains('active')) renderCart();
-    };
+      function saveCart() { localStorage.setItem('cart', JSON.stringify(cart)); }
+      function updateCartBadge() {
+        const total = cart.reduce((sum, i) => sum + i.quantity, 0);
+        cartCountBadge.textContent = total || '';
+      }
 
-    window.clearCart = () => {
-      cart = [];
-      saveCart();
-      updateCartBadge();
-      if (cartScreen.classList.contains('active')) renderCart();
-    };
-
-    function saveCart() { localStorage.setItem('cart', JSON.stringify(cart)); }
-    function updateCartBadge() {
-      const total = cart.reduce((sum, i) => sum + i.quantity, 0);
-      cartCountBadge.textContent = total || '';
-    }
-
-    function renderCart() {
-      if (!cartItemsContainer) return;
-      if (cart.length === 0) {
-        cartItemsContainer.innerHTML = '<div class="empty-cart">🛍️ Корзина пуста</div>';
-        cartTotalSpan.textContent = '0';
- 
+      function renderCart() {
+        if (!cartItemsContainer) return;
+        if (cart.length === 0) {
+          cartItemsContainer.innerHTML = '<div class="empty-cart">🛍️ Корзина пуста</div>';
+          cartTot
