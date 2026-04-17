@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <style>
-    /* Переменные тем */
+    /* ----- ПЕРЕМЕННЫЕ ТЕМ (СВЕТЛАЯ / ТЁМНАЯ) ----- */
     :root {
       --bg: #f5f7fa;
       --surface: #ffffff;
@@ -165,6 +165,7 @@
       border-radius: 60px; font-size: 16px; margin-bottom: 14px;
       color: var(--text-primary);
     }
+    .form-control::placeholder { color: var(--text-secondary); }
     .btn-order {
       background: var(--accent); color: white;
       border: none; padding: 16px;
@@ -178,6 +179,7 @@
       background: var(--nav-bg); display: flex; justify-content: space-around;
       padding: 12px 16px 20px;
       border-top: 1px solid var(--nav-border);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
     }
     .nav-item {
       display: flex; flex-direction: column; align-items: center;
@@ -187,7 +189,7 @@
     .nav-item.active { color: var(--accent); }
     .nav-icon { font-size: 22px; margin-bottom: 2px; }
 
-    /* Drawer */
+    /* Drawer (меню) */
     .drawer {
       position: fixed; top: 0; right: -300px; width: 280px; height: 100%;
       background: var(--surface); box-shadow: -5px 0 20px rgba(0,0,0,0.1);
@@ -206,27 +208,97 @@
       background: none; border: none; font-size: 24px;
       cursor: pointer; color: var(--text-primary);
     }
+
+    /* Модальное окно (успешный заказ) */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 2000;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.25s, visibility 0.25s;
+    }
+    .modal-overlay.show {
+      opacity: 1; visibility: visible;
+    }
+    .modal-card {
+      background: var(--surface);
+      border-radius: 32px;
+      padding: 32px 24px;
+      max-width: 340px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      transform: scale(0.9);
+      transition: transform 0.2s;
+      border: 1px solid var(--border);
+    }
+    .modal-overlay.show .modal-card {
+      transform: scale(1);
+    }
+    .modal-icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+    }
+    .modal-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+    .modal-text {
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+    .modal-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 16px;
+      width: 100%;
+      cursor: pointer;
+    }
+
     #message { margin-top: 16px; font-weight: 500; }
     .empty-cart { text-align: center; padding: 40px; color: var(--text-secondary); }
     .loading { text-align: center; padding: 40px; }
   </style>
 </head>
 <body>
+  <!-- Drawer overlay -->
   <div class="drawer-overlay" id="drawerOverlay"></div>
+  <!-- Drawer -->
   <div class="drawer" id="drawer">
     <button class="close-drawer" id="closeDrawerBtn">&times;</button>
-    <h3>Настройки</h3>
-    <div class="theme-toggle" style="display:flex; justify-content:space-between; padding:12px 0;">
+    <h3 style="margin-bottom:20px; color:var(--text-primary);">Настройки</h3>
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border);">
       <span>🌙 Тёмная тема</span>
-      <label><input type="checkbox" id="themeSwitch"></label>
+      <label class="switch">
+        <input type="checkbox" id="themeSwitch">
+      </label>
     </div>
   </div>
 
+  <!-- Модальное окно подтверждения заказа -->
+  <div class="modal-overlay" id="successModal">
+    <div class="modal-card">
+      <div class="modal-icon">✅</div>
+      <div class="modal-title">Заказ оформлен!</div>
+      <div class="modal-text">Мы уже получили ваш заказ и совсем скоро свяжемся с вами для уточнения деталей. Хорошего дня! С уважением qpraq store</div>
+      <button class="modal-btn" id="closeModalBtn">Понятно</button>
+    </div>
+  </div>
+
+  <!-- Шапка -->
   <div class="app-header">
     <div class="logo">✦ QPRAQ STORE</div>
     <button class="menu-btn" id="menuBtn">☰</button>
   </div>
 
+  <!-- ЭКРАНЫ -->
   <div id="homeScreen" class="screen active">
     <div id="productsContainer" class="products-list loading">Загрузка товаров...</div>
   </div>
@@ -250,19 +322,19 @@
     <button id="clearCartBtn" style="margin-top:16px; background:none; border:none; color:var(--danger);">Очистить корзину</button>
   </div>
 
+  <!-- Нижнее меню -->
   <div class="bottom-nav">
     <button class="nav-item active" data-screen="home"><span class="nav-icon">🏠</span>Главная</button>
     <button class="nav-item" data-screen="cart"><span class="nav-icon">🛒</span>Корзина <span id="cartCountBadge"></span></button>
   </div>
 
   <script>
-    // ---------- НАСТРОЙКИ (замените на свои) ----------
+    // ---------- НАСТРОЙКИ (ЗАМЕНИТЕ НА СВОИ) ----------
     const PRODUCTS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCWLsmQuxcITOg3hjhKFcXKM6Lj4VIOcRZCm_dSpTncH0DHFDpaTjsniRd3hO-qxEUW3evcdhJMwJT/pub?gid=0&single=true&output=csv';
     const ORDER_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwML-RtpsAuUayi7ES8GNKGOfL-K4h9E9uba81Ntu9RGkQ_CGtC7Zm__5JSV_PhBh_G/exec';
-    // Если CORS мешает, раскомментируйте следующую строку:
-    // const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+    // Если нужен прокси для CORS: const PROXY_URL = 'https://api.allorigins.win/raw?url=';
     
-    // Глобальные переменные
+    // ---------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ----------
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
     let products = [];
 
@@ -283,8 +355,10 @@
     const closeDrawerBtn = document.getElementById('closeDrawerBtn');
     const themeSwitch = document.getElementById('themeSwitch');
     const backFromDetailBtn = document.getElementById('backFromDetailBtn');
+    const successModal = document.getElementById('successModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
 
-    // Тема
+    // ---------- ТЕМА ----------
     if (localStorage.getItem('theme') === 'dark') {
       document.body.classList.add('dark');
       themeSwitch.checked = true;
@@ -294,7 +368,7 @@
       localStorage.setItem('theme', e.target.checked ? 'dark' : 'light');
     });
 
-    // Drawer
+    // ---------- DRAWER (меню) ----------
     menuBtn.addEventListener('click', () => {
       drawer.classList.add('open');
       drawerOverlay.classList.add('show');
@@ -306,7 +380,7 @@
     closeDrawerBtn.addEventListener('click', closeDrawer);
     drawerOverlay.addEventListener('click', closeDrawer);
 
-    // Навигация
+    // ---------- НАВИГАЦИЯ ----------
     function setActiveScreen(screenId) {
       homeScreen.classList.remove('active');
       detailScreen.classList.remove('active');
@@ -329,7 +403,22 @@
     });
     backFromDetailBtn.addEventListener('click', () => setActiveScreen('home'));
 
-    // Загрузка товаров
+    // ---------- МОДАЛЬНОЕ ОКНО ----------
+    function showSuccessModal() {
+      successModal.classList.add('show');
+    }
+    function hideSuccessModal() {
+      successModal.classList.remove('show');
+    }
+    closeModalBtn.addEventListener('click', () => {
+      hideSuccessModal();
+      setActiveScreen('home');  // после закрытия возвращаем на главную
+    });
+    successModal.addEventListener('click', (e) => {
+      if (e.target === successModal) hideSuccessModal();
+    });
+
+    // ---------- ЗАГРУЗКА ТОВАРОВ ----------
     async function loadProducts() {
       try {
         let url = PRODUCTS_CSV_URL;
@@ -352,7 +441,7 @@
         }).filter(p => p.id);
         renderHomeProducts();
       } catch (err) {
-        productsContainer.innerHTML = '<p style="color:red;">Ошибка загрузки товаров. Проверьте ссылку.</p>';
+        productsContainer.innerHTML = '<p style="color:var(--danger);">Ошибка загрузки товаров</p>';
         console.error(err);
       }
     }
@@ -395,7 +484,7 @@
       return div.innerHTML;
     }
 
-    // Детали товара
+    // ---------- ДЕТАЛИ ТОВАРА ----------
     window.showProductDetail = (productId) => {
       const product = products.find(p => p.id === productId);
       if (!product) return;
@@ -417,7 +506,7 @@
       setActiveScreen('detail');
     };
 
-    // Корзина
+    // ---------- КОРЗИНА ----------
     window.addToCart = (id) => {
       const product = products.find(p => p.id === id);
       if (!product) return;
@@ -454,56 +543,4 @@
       if (cart.length === 0) {
         cartItemsContainer.innerHTML = '<div class="empty-cart">🛍️ Корзина пуста</div>';
         cartTotalSpan.textContent = '0';
-        return;
-      }
-      let html = '';
-      let total = 0;
-      cart.forEach(item => {
-        const itemTotal = item.price * item.quantity;
-        total += itemTotal;
-        html += `
-          <div class="cart-item">
-            <div style="display:flex; justify-content:space-between;">
-              <span><strong>${escapeHtml(item.name)}</strong> x${item.quantity}</span>
-              <span>${itemTotal.toLocaleString()} ₽</span>
-            </div>
-            <button onclick="window.removeFromCart('${item.id}')" style="background:none; border:none; color:var(--danger); margin-top:8px;">Удалить</button>
-          </div>
-        `;
-      });
-      cartItemsContainer.innerHTML = html;
-      cartTotalSpan.textContent = total.toLocaleString();
-    }
-
-    orderForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (cart.length === 0) { alert('Корзина пуста'); return; }
-      const formData = new FormData(orderForm);
-      const order = { name: formData.get('name'), phone: formData.get('phone'), cart };
-      messageDiv.textContent = 'Отправка...';
-      try {
-        const response = await fetch(ORDER_SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify(order)
-        });
-        const result = await response.json();
-        if (result.result === 'success') {
-          messageDiv.textContent = '✅ Заказ принят!';
-          window.clearCart();
-          orderForm.reset();
-          setActiveScreen('home');
-        } else throw new Error();
-      } catch (err) {
-        messageDiv.textContent = '❌ Ошибка отправки';
-      }
-    });
-
-    document.getElementById('clearCartBtn').addEventListener('click', window.clearCart);
-
-    // Старт
-    loadProducts();
-    renderCart();
-    updateCartBadge();
-  </script>
-</body>
-</html>
+ 
