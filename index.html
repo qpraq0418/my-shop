@@ -442,7 +442,7 @@
       try {
         // используем прокси только если сайт на реальном домене (не file://), 
         // но для GitHub Pages это работает отлично.
-        const fetchUrl = PROXY_URL + encodeURIComponent(PRODUCTS_CSV_URL);
+        const fetchUrl = PRODUCTS_CSV_URL;
         const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const csvText = await response.text();
