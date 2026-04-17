@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <style>
-    /* ----- ПЕРЕМЕННЫЕ ТЕМ ----- */
     :root {
       --bg: #f5f7fa;
       --surface: #ffffff;
@@ -37,7 +36,6 @@
       --btn-primary-bg: #3f5bff;
       --btn-primary-text: #ffffff;
     }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', sans-serif;
@@ -73,8 +71,6 @@
     }
     .screen { display: none; }
     .screen.active { display: block; }
-
-    /* Карточка товара */
     .product-card {
       background: var(--surface);
       border-radius: 20px;
@@ -122,8 +118,6 @@
       padding: 4px 8px; border-radius: 40px;
       font-weight: 600; font-size: 12px;
     }
-
-    /* Детальная страница */
     .product-detail-card {
       background: var(--surface);
       border-radius: 24px;
@@ -148,8 +142,6 @@
     .detail-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
     .detail-description { color: var(--text-secondary); margin: 16px 0; line-height: 1.5; }
     .detail-price-block { margin: 20px 0; }
-
-    /* Корзина */
     .cart-item {
       background: var(--surface); border-radius: 18px;
       padding: 16px; margin-bottom: 12px;
@@ -172,8 +164,6 @@
       border-radius: 60px; font-weight: 700;
       font-size: 18px; width: 100%; cursor: pointer;
     }
-
-    /* Нижнее меню */
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; width: 100%;
       background: var(--nav-bg); display: flex; justify-content: space-around;
@@ -188,8 +178,6 @@
     }
     .nav-item.active { color: var(--accent); }
     .nav-icon { font-size: 22px; margin-bottom: 2px; }
-
-    /* Drawer */
     .drawer {
       position: fixed; top: 0; right: -300px; width: 280px; height: 100%;
       background: var(--surface); box-shadow: -5px 0 20px rgba(0,0,0,0.1);
@@ -208,8 +196,6 @@
       background: none; border: none; font-size: 24px;
       cursor: pointer; color: var(--text-primary);
     }
-
-    /* Модальное окно */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.5); z-index: 2000;
@@ -232,9 +218,7 @@
       transition: transform 0.2s;
       border: 1px solid var(--border);
     }
-    .modal-overlay.show .modal-card {
-      transform: scale(1);
-    }
+    .modal-overlay.show .modal-card { transform: scale(1); }
     .modal-icon { font-size: 56px; margin-bottom: 16px; }
     .modal-title { font-size: 24px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary); }
     .modal-text { color: var(--text-secondary); line-height: 1.5; margin-bottom: 28px; }
@@ -244,12 +228,11 @@
       border-radius: 60px; font-weight: 600;
       font-size: 16px; width: 100%; cursor: pointer;
     }
-
     #message { margin-top: 16px; font-weight: 500; }
     .empty-cart { text-align: center; padding: 40px; color: var(--text-secondary); }
     .loading { text-align: center; padding: 40px; }
-  </style>
-</head>
+      </style>
+      </head>
 <body>
   <div class="drawer-overlay" id="drawerOverlay"></div>
   <div class="drawer" id="drawer">
@@ -260,8 +243,6 @@
       <label><input type="checkbox" id="themeSwitch"></label>
     </div>
   </div>
-
-  <!-- Модальное окно успеха -->
   <div class="modal-overlay" id="successModal">
     <div class="modal-card">
       <div class="modal-icon">✅</div>
@@ -270,22 +251,17 @@
       <button class="modal-btn" id="closeModalBtn">Понятно</button>
     </div>
   </div>
-
   <div class="app-header">
     <div class="logo">✦ QPRAQ STORE</div>
     <button class="menu-btn" id="menuBtn">☰</button>
   </div>
-
-  <!-- ЭКРАНЫ -->
   <div id="homeScreen" class="screen active">
     <div id="productsContainer" class="products-list loading">Загрузка товаров...</div>
   </div>
-
   <div id="detailScreen" class="screen">
     <button class="back-btn" id="backFromDetailBtn">← Назад</button>
     <div id="detailContainer"></div>
   </div>
-
   <div id="cartScreen" class="screen">
     <h1 style="margin-bottom:20px;">🛒 Корзина</h1>
     <div id="cartItemsContainer"></div>
@@ -299,24 +275,16 @@
     <div id="message"></div>
     <button id="clearCartBtn" style="margin-top:16px; background:none; border:none; color:var(--danger);">Очистить корзину</button>
   </div>
-
   <div class="bottom-nav">
     <button class="nav-item active" data-screen="home"><span class="nav-icon">🏠</span>Главная</button>
     <button class="nav-item" data-screen="cart"><span class="nav-icon">🛒</span>Корзина <span id="cartCountBadge"></span></button>
   </div>
-
-  <script>
+    <script>
     (function() {
-      // ---------- НАСТРОЙКИ (ЗАМЕНИТЕ НА СВОИ) ----------
       const PRODUCTS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCWLsmQuxcITOg3hjhKFcXKM6Lj4VIOcRZCm_dSpTncH0DHFDpaTjsniRd3hO-qxEUW3evcdhJMwJT/pub?gid=0&single=true&output=csv';
       const ORDER_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwML-RtpsAuUayi7ES8GNKGOfL-K4h9E9uba81Ntu9RGkQ_CGtC7Zm__5JSV_PhBh_G/exec';
-      // const PROXY_URL = 'https://api.allorigins.win/raw?url=';  // раскомментируйте если CORS
-
-      // ---------- СОСТОЯНИЕ ----------
       let cart = JSON.parse(localStorage.getItem('cart')) || [];
       let products = [];
-
-      // DOM элементы
       const homeScreen = document.getElementById('homeScreen');
       const detailScreen = document.getElementById('detailScreen');
       const cartScreen = document.getElementById('cartScreen');
@@ -335,8 +303,6 @@
       const backFromDetailBtn = document.getElementById('backFromDetailBtn');
       const successModal = document.getElementById('successModal');
       const closeModalBtn = document.getElementById('closeModalBtn');
-
-      // Тема
       if (localStorage.getItem('theme') === 'dark') {
         document.body.classList.add('dark');
         if (themeSwitch) themeSwitch.checked = true;
@@ -347,8 +313,6 @@
           localStorage.setItem('theme', e.target.checked ? 'dark' : 'light');
         });
       }
-
-      // Drawer
       menuBtn.addEventListener('click', () => {
         drawer.classList.add('open');
         drawerOverlay.classList.add('show');
@@ -359,8 +323,6 @@
       }
       closeDrawerBtn.addEventListener('click', closeDrawer);
       drawerOverlay.addEventListener('click', closeDrawer);
-
-      // Навигация
       function setActiveScreen(screenId) {
         homeScreen.classList.remove('active');
         detailScreen.classList.remove('active');
@@ -382,25 +344,16 @@
         btn.addEventListener('click', () => setActiveScreen(btn.dataset.screen));
       });
       backFromDetailBtn.addEventListener('click', () => setActiveScreen('home'));
-
-      // Модалка
-      function showSuccessModal() {
-        successModal.classList.add('show');
-      }
+      function showSuccessModal() { successModal.classList.add('show'); }
       function hideSuccessModal() {
         successModal.classList.remove('show');
         setActiveScreen('home');
       }
       closeModalBtn.addEventListener('click', hideSuccessModal);
-      successModal.addEventListener('click', (e) => {
-        if (e.target === successModal) hideSuccessModal();
-      });
-
-      // Загрузка товаров
+      successModal.addEventListener('click', (e) => { if (e.target === successModal) hideSuccessModal(); });
       async function loadProducts() {
         try {
           let url = PRODUCTS_CSV_URL;
-          // если нужен прокси: url = PROXY_URL + encodeURIComponent(PRODUCTS_CSV_URL);
           const response = await fetch(url);
           if (!response.ok) throw new Error('Ошибка сети');
           const csvText = await response.text();
@@ -423,98 +376,39 @@
           console.error(err);
         }
       }
-
       function renderHomeProducts() {
-        if (!products.length) {
-          productsContainer.innerHTML = '<p>Нет товаров</p>';
-          return;
-        }
+        if (!products.length) { productsContainer.innerHTML = '<p>Нет товаров</p>'; return; }
         let html = '';
         products.forEach(p => {
           const hasDiscount = p.oldPrice && p.oldPrice > p.price;
           const discount = hasDiscount ? Math.round((1 - p.price / p.oldPrice) * 100) : p.discountPercent;
-          html += `
-            <div class="product-card" onclick="window.showProductDetail('${p.id}')">
-              <div class="product-row">
-                <img class="product-image" src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}">
-                <div class="product-info">
-                  <div class="product-title">${escapeHtml(p.name)}</div>
-                  <div class="price-section">
-                    ${hasDiscount ? `<span class="old-price">${p.oldPrice} ₽</span>` : ''}
-                    <span class="current-price">${p.price} ₽</span>
-                    ${hasDiscount ? `<span class="discount-badge">-${discount}%</span>` : ''}
-                  </div>
-                </div>
-              </div>
-              <div class="card-footer">
-                ${hasDiscount ? '<span class="sale-label">SALE</span>' : '<span></span>'}
-                <button class="btn-cart" onclick="event.stopPropagation(); window.addToCart('${p.id}')">В корзину</button>
-              </div>
-            </div>
-          `;
+          html += `<div class="product-card" onclick="window.showProductDetail('${p.id}')"><div class="product-row"><img class="product-image" src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}"><div class="product-info"><div class="product-title">${escapeHtml(p.name)}</div><div class="price-section">${hasDiscount ? `<span class="old-price">${p.oldPrice} ₽</span>` : ''}<span class="current-price">${p.price} ₽</span>${hasDiscount ? `<span class="discount-badge">-${discount}%</span>` : ''}</div></div></div><div class="card-footer">${hasDiscount ? '<span class="sale-label">SALE</span>' : '<span></span>'}<button class="btn-cart" onclick="event.stopPropagation(); window.addToCart('${p.id}')">В корзину</button></div></div>`;
         });
         productsContainer.innerHTML = html;
       }
-
-      function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-      }
-
-      // Глобальные функции
+      function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
       window.showProductDetail = (productId) => {
         const product = products.find(p => p.id === productId);
         if (!product) return;
         const hasDiscount = product.oldPrice && product.oldPrice > product.price;
         const discount = hasDiscount ? Math.round((1 - product.price / product.oldPrice) * 100) : product.discountPercent;
-        detailContainer.innerHTML = `
-          <div class="product-detail-card">
-            <img class="detail-image" src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}">
-            <div class="detail-title">${escapeHtml(product.name)}</div>
-            <div class="detail-description">${escapeHtml(product.description || 'Описание отсутствует')}</div>
-            <div class="detail-price-block">
-              ${hasDiscount ? `<span class="old-price">${product.oldPrice} ₽</span>` : ''}
-              <span class="current-price" style="font-size:28px;">${product.price} ₽</span>
-              ${hasDiscount ? `<span class="discount-badge">-${discount}%</span>` : ''}
-            </div>
-            <button class="btn-cart" style="width:100%;" onclick="window.addToCart('${product.id}')">В корзину</button>
-          </div>
-        `;
+        detailContainer.innerHTML = `<div class="product-detail-card"><img class="detail-image" src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}"><div class="detail-title">${escapeHtml(product.name)}</div><div class="detail-description">${escapeHtml(product.description || 'Описание отсутствует')}</div><div class="detail-price-block">${hasDiscount ? `<span class="old-price">${product.oldPrice} ₽</span>` : ''}<span class="current-price" style="font-size:28px;">${product.price} ₽</span>${hasDiscount ? `<span class="discount-badge">-${discount}%</span>` : ''}</div><button class="btn-cart" style="width:100%;" onclick="window.addToCart('${product.id}')">В корзину</button></div>`;
         setActiveScreen('detail');
       };
-
       window.addToCart = (id) => {
         const product = products.find(p => p.id === id);
         if (!product) return;
         const existing = cart.find(item => item.id === id);
-        if (existing) existing.quantity++;
-        else cart.push({ id: product.id, name: product.name, price: product.price, quantity: 1 });
-        saveCart();
-        updateCartBadge();
-        if (cartScreen.classList.contains('active')) renderCart();
+        if (existing) existing.quantity++; else cart.push({ id: product.id, name: product.name, price: product.price, quantity: 1 });
+        saveCart(); updateCartBadge(); if (cartScreen.classList.contains('active')) renderCart();
       };
-
       window.removeFromCart = (id) => {
         cart = cart.filter(item => item.id !== id);
-        saveCart();
-        updateCartBadge();
-        if (cartScreen.classList.contains('active')) renderCart();
+        saveCart(); updateCartBadge(); if (cartScreen.classList.contains('active')) renderCart();
       };
-
-      window.clearCart = () => {
-        cart = [];
-        saveCart();
-        updateCartBadge();
-        if (cartScreen.classList.contains('active')) renderCart();
-      };
-
+      window.clearCart = () => { cart = []; saveCart(); updateCartBadge(); if (cartScreen.classList.contains('active')) renderCart(); };
       function saveCart() { localStorage.setItem('cart', JSON.stringify(cart)); }
-      function updateCartBadge() {
-        const total = cart.reduce((sum, i) => sum + i.quantity, 0);
-        cartCountBadge.textContent = total || '';
-      }
-
+      function updateCartBadge() { const total = cart.reduce((sum, i) => sum + i.quantity, 0); cartCountBadge.textContent = total || ''; }
       function renderCart() {
         if (!cartItemsContainer) return;
         if (cart.length === 0) {
@@ -522,5 +416,39 @@
           cartTotalSpan.textContent = '0';
           return;
         }
-        let html = '';
-   
+        let html = ''; let total = 0;
+        cart.forEach(item => {
+          const itemTotal = item.price * item.quantity; total += itemTotal;
+          html += `<div class="cart-item"><div style="display:flex; justify-content:space-between;"><span><strong>${escapeHtml(item.name)}</strong> x${item.quantity}</span><span>${itemTotal.toLocaleString()} ₽</span></div><button onclick="window.removeFromCart('${item.id}')" style="background:none; border:none; color:var(--danger); margin-top:8px;">Удалить</button></div>`;
+        });
+        cartItemsContainer.innerHTML = html;
+        cartTotalSpan.textContent = total.toLocaleString();
+      }
+      orderForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (cart.length === 0) { alert('Корзина пуста'); return; }
+        const formData = new FormData(orderForm);
+        const order = { name: formData.get('name'), phone: formData.get('phone'), cart };
+        messageDiv.textContent = 'Отправка...';
+        try {
+          const response = await fetch(ORDER_SCRIPT_URL, { method: 'POST', body: JSON.stringify(order) });
+          const result = await response.json();
+          if (result.result === 'success') {
+            messageDiv.textContent = '';
+            window.clearCart();
+            orderForm.reset();
+            showSuccessModal();
+          } else throw new Error('Ошибка сервера');
+        } catch (err) {
+          messageDiv.textContent = '❌ Ошибка отправки';
+          console.error(err);
+        }
+      });
+      document.getElementById('clearCartBtn').addEventListener('click', window.clearCart);
+      loadProducts();
+      renderCart();
+      updateCartBadge();
+    })();
+  </script>
+</body>
+</html>
