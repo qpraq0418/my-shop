@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>✨ store — дропшиппинг витрина</title>
+  <title>✨ qpraq store</title>
   <!-- Google Fonts для красивого шрифта -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -331,7 +331,7 @@
     const PRODUCTS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCWLsmQuxcITOg3hjhKFcXKM6Lj4VIOcRZCm_dSpTncH0DHFDpaTjsniRd3hO-qxEUW3evcdhJMwJT/pub?gid=0&single=true&output=csv';
     const ORDER_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwML-RtpsAuUayi7ES8GNKGOfL-K4h9E9uba81Ntu9RGkQ_CGtC7Zm__5JSV_PhBh_G/exec';
     // Для обхода CORS (работает и на GitHub Pages)
-    const PROXY_URL = 'https://corsproxy.io/?';
+    const PROXY_URL = 'https://api.allorigins.win/raw?url=';
 
     // ---------- СОСТОЯНИЕ ----------
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -442,7 +442,7 @@
       try {
         // используем прокси только если сайт на реальном домене (не file://), 
         // но для GitHub Pages это работает отлично.
-        const fetchUrl = PRODUCTS_CSV_URL;
+        const fetchUrl = PROXY_URL + encodeURIComponent(PRODUCTS_CSV_URL);
         const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const csvText = await response.text();
